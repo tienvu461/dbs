@@ -1,0 +1,13 @@
+[package]
+name = "backupd-catalog"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+backupd-core = { path = "../core" }
+chrono.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true

@@ -1,0 +1,19 @@
+title = "backupd secret detection"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "backupd-runtime-secret"
+description = "Assigned backupd encryption keys and TikTok session credentials"
+regex = '''(?i)(?:BACKUP_MASTER_KEY|BACKUPD_API_TOKEN|TIKTOK_COOKIE|TIKTOK_CSRF_TOKEN)\s*[=:]\s*["']?([a-z0-9_+/=; .%:-]{20,})'''
+secretGroup = 1
+keywords = ["BACKUP_MASTER_KEY", "BACKUPD_API_TOKEN", "TIKTOK_COOKIE", "TIKTOK_CSRF_TOKEN"]
+
+[[rules.allowlists]]
+regexTarget = "secret"
+regexes = ['''^<[^>]+>''']
+
+[[allowlists]]
+description = "Generated local build and runtime data; never publication inputs"
+paths = ['''(^|/)target/''', '''(^|/)data/''']

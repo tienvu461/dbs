@@ -1,0 +1,9 @@
+# Only build inputs belong in the container build context.
+**
+!Dockerfile
+!Cargo.toml
+!Cargo.lock
+!crates/
+!crates/**/
+!crates/**/Cargo.toml
+!crates/**/*.rs

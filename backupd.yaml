@@ -1,0 +1,26 @@
+server:
+  bind: 127.0.0.1:8080
+  api_token_env: BACKUPD_API_TOKEN # Required for non-loopback binds; YAML is illustrative.
+database:
+  url: sqlite://data/backup.db
+storage:
+  filesystem_root: data/blobs
+  # Set BACKUPD_TRANSPORT=s3 to use any S3-compatible service.
+  s3_endpoint_url: https://s3.amazonaws.com
+  s3_bucket: backupd
+  s3_region: us-east-1
+  s3_prefix: backupd
+workers:
+  concurrency: 4
+  max_attempts: 5
+  stale_lock_seconds: 600
+pipeline:
+  chunk_size: 67108864
+  compression_level: 6
+  encryption_key_env: BACKUP_MASTER_KEY
+tiktok:
+  enabled: false
+  org_id_env: TIKTOK_ORG_ID
+  cookie_env: TIKTOK_COOKIE
+  csrf_token_env: TIKTOK_CSRF_TOKEN
+  cdn_origin: https://p16-ad-sg.tiktokcdn.com/origin/
