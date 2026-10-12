@@ -1,5 +1,7 @@
 # Operations and maintenance
 
+> Legacy SQLite/Axum service runbook. The primary stateless library/CLI and Cloudflare wrapper are documented in [STATELESS.md](STATELESS.md) and [CLOUDFLARE.md](CLOUDFLARE.md). The default image now runs `backupctl`, not this server.
+
 ## Configuration reference
 
 The current binary reads environment variables. `backupd.yaml` is an illustrative config sample; it is not loaded by the service.

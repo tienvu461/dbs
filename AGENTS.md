@@ -2,9 +2,14 @@
 
 ## Project snapshot
 
-`backupd` is a Rust workspace for a standalone backup ingestion and restore service. It uses Axum, Tokio, SQLite, a chunk/compress/encrypt pipeline, and pluggable blob transports. Read [`ARCHITECTURE.md`](ARCHITECTURE.md) for the current implementation boundaries and known gaps; the older [`backupd-architecture-design.md`](backupd-architecture-design.md) is a target design document and is not a complete description of the code today.
+`backupd` is primarily a stateless Rust upload/restore library, one-shot CLI and Cloudflare Rust Queue consumer. Read [`ARCHITECTURE.md`](ARCHITECTURE.md). The original SQLite/Axum service is retained for migration, with known defects documented in `SECURITY.md`; do not route the new library through its catalog/job code. The older design document describes the historical stateful target.
 
 ## Workspace map
+
+- `crates/engine`: `backupd-lib`, portable authenticated v2 manifests and bounded encrypted chunk processing; no Tokio/SQLite/native SDK dependencies.
+- `crates/backupctl`: stateless native file/stdin/HTTPS adapters and filesystem/S3/TikTok upload/restore command.
+- `crates/cloudflare`: workers-rs R2/Queue wrapper and R2 metadata output; check the WASM target explicitly.
+- The entries below describe the retained legacy service and native transport helpers.
 
 - `crates/backupd`: HTTP API, environment-driven service construction, health endpoints.
 - `crates/core`: backup, chunk, artifact, and manifest data types.
@@ -23,10 +28,11 @@ Use a current stable Rust toolchain (the container build uses Rust 1.99):
 cargo fmt --all -- --check
 cargo check --workspace --locked
 cargo test --workspace --locked
-cargo run -p backupd
+cargo check -p backupd-cloudflare --target wasm32-unknown-unknown --locked
+cargo run -p backupctl -- --help
 ```
 
-`cargo run -p backupd` uses the filesystem transport and creates `data/` by default. To validate the container locally:
+`cargo run -p backupd` explicitly runs the legacy server. The default Docker image runs `backupctl`. To validate the container locally:
 
 ```sh
 docker build --platform linux/amd64 -t backupd:dev .
@@ -36,7 +42,8 @@ docker build --platform linux/amd64 -t backupd:dev .
 
 - Keep transport-specific locator/authentication behavior behind `BlobTransport`; manifests should hold logical chunk hashes plus locator metadata, not provider SDK objects.
 - Store chunk bytes before catalog completion. Only mark a backup complete once the object locations have been verified and its complete manifest and chunk references are persisted.
-- Keep jobs durable in SQLite. A process restart must be able to reclaim stale work. Make job processing idempotent: uploads to the same content-addressed key must validate identical content and repeated completion must not duplicate artifact references.
+- New engine APIs must remain stateless: return portable metadata to callers; no SQL catalog or process-local completion registry. Runtime wrappers own retry/delivery policy. Authenticate manifests before resolving their locators, and read back every uploaded chunk before returning success.
+- Keep native SDKs, filesystem and Tokio out of the portable engine/WASM dependency graph. Workers read private input through bindings and use separate input/output buckets.
 - Preserve the distinction between the plaintext digest (`ChunkManifest::plaintext_hash`) and the stored-byte digest (`stored_hash`). Verify stored bytes before decrypt/decompress and verify plaintext before restore output.
 - Never emit keys, TikTok cookies, AWS credentials, or full sensitive request headers in logs or API errors.
 - New config should be documented in `README.md` and `backupd.yaml` if the file is intended as an operator example. The current service reads environment variables; `backupd.yaml` is illustrative and is not parsed at runtime.

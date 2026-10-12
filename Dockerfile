@@ -3,7 +3,7 @@ FROM rust:1.99-bookworm AS builder
 WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
-RUN cargo build --release --locked -p backupd
+RUN cargo build --release --locked -p backupctl
 
 FROM debian:bookworm-slim AS runtime
 
@@ -13,13 +13,8 @@ RUN apt-get update \
     && useradd --system --uid 10001 --create-home backupd
 
 WORKDIR /app
-COPY --from=builder /build/target/release/backupd /usr/local/bin/backupd
-EXPOSE 8080
-ENV BACKUPD_BIND=0.0.0.0:8080 \
-    DATABASE_URL=sqlite:///data/backup.db \
-    BACKUPD_STORAGE_ROOT=/data/blobs \
-    BACKUPD_STAGING_ROOT=/data/staging
-VOLUME ["/data"]
-RUN mkdir -p /data/blobs /data/staging && chown -R 10001:10001 /data
+COPY --from=builder /build/target/release/backupctl /usr/local/bin/backupctl
+RUN mkdir -p /data/blobs && chown -R 10001:10001 /data
+ENV BACKUPD_STORAGE_ROOT=/data/blobs
 USER 10001:10001
-ENTRYPOINT ["backupd"]
+ENTRYPOINT ["backupctl"]

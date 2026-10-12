@@ -1,0 +1,18 @@
+[package]
+name = "backupctl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+backupd-lib = { path = "../engine", features = ["native"] }
+backupd-transport = { path = "../transport" }
+async-trait.workspace = true
+anyhow.workspace = true
+clap = { version = "4", features = ["derive", "env"] }
+futures.workspace = true
+tokio.workspace = true
+tokio-util = { workspace = true, features = ["compat"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+hex.workspace = true
+ulid.workspace = true

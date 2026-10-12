@@ -1,0 +1,40 @@
+name = "backupd-consumer"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-10-11"
+workers_dev = false
+
+[build]
+command = "cargo install worker-build --version 0.8.7 --locked && worker-build --release"
+
+[vars]
+INPUT_BUCKET_NAME = "backupd-input"
+INPUT_PREFIX = "incoming/"
+BLOB_BUCKET_NAME = "backupd-blobs"
+MANIFEST_BUCKET_NAME = "backupd-manifests"
+DESTINATION = "r2" # or "tiktok" with Business Center secrets
+KEY_ID = "default"
+CHUNK_SIZE = "1048576"
+MAX_INPUT_BYTES = "16777216"
+TIKTOK_CDN_ORIGIN = "https://p16-ad-sg.tiktokcdn.com/origin/"
+
+[[r2_buckets]]
+binding = "INPUT_BUCKET"
+bucket_name = "backupd-input"
+
+[[r2_buckets]]
+binding = "BLOB_BUCKET"
+bucket_name = "backupd-blobs"
+
+[[r2_buckets]]
+binding = "MANIFEST_BUCKET"
+bucket_name = "backupd-manifests"
+
+[[queues.consumers]]
+queue = "backupd-uploads"
+max_batch_size = 1
+max_batch_timeout = 5
+max_retries = 3
+dead_letter_queue = "backupd-failed"
+
+[limits]
+cpu_ms = 300000

@@ -1,4 +1,9 @@
 /target/
+/crates/cloudflare/build/
+**/.wrangler/
+**/node_modules/
+.dev.vars
+.dev.vars.*
 /data/
 *.db
 *.db-shm

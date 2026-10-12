@@ -1,0 +1,22 @@
+name: Rust checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-and-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test native code and check Workers target
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/work" -w /work rust:1.99-bookworm sh -c '
+            rustup component add rustfmt &&
+            rustup target add wasm32-unknown-unknown &&
+            cargo fmt --all -- --check &&
+            cargo check --workspace --locked &&
+            cargo test --workspace --locked &&
+            cargo check -p backupd-cloudflare --target wasm32-unknown-unknown --locked
+          '

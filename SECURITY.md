@@ -1,8 +1,14 @@
 # Security and public-repository maintenance
 
+## Stateless path scope
+
+`backupd-lib`, `backupctl` and `backupd-cloudflare` are the primary execution path. They do not invoke the legacy SQLite jobs/GC code described in the review table below. Stateless v2 requires encryption, authenticates the entire manifest before fetching, bounds chunk decompression and verifies stored/plaintext hashes. The native CLI atomically publishes restored output; the Worker acknowledges only after R2 manifest publication and verification. Local source-file access is explicitly caller-directed; URL input validates/pins DNS and rejects redirects by default. TikTok retrieval is anonymous and read-back verified by the library.
+
+New remaining concerns: stateless failures/retries can leave orphan objects; ownership/cleanup belongs to users. Native S3 get still collects a full response after checking HEAD size, so only use your trusted configured bucket and protect writers. Public CDN hosts remain subject to DNS/network behavior. Cloudflare/TikTok live tests require credentials and have not been claimed. Large-file multi-invocation recovery and notification integrations are deferred. Manifest v2 is incompatible with legacy v1; retain old keys and original backups during migration.
+
 ## Reporting
 
-Report vulnerabilities using GitHub private vulnerability reporting for `tienvu461/backupd` when enabled. Otherwise contact the maintainer privately before publishing exploit details. Never include credentials, browser cookies, encryption keys, backup contents, or unredacted provider responses in public issues.
+Report vulnerabilities using GitHub private vulnerability reporting for `tienvu461/dbs` when enabled. Otherwise contact the maintainer privately before publishing exploit details. Never include credentials, browser cookies, encryption keys, backup contents, or unredacted provider responses in public issues.
 
 ## Secret scanning before commits
 
@@ -34,17 +40,17 @@ Rules extend the upstream detector set and detect assigned backupd/TikTok secret
 
 If a secret was committed, revoke/rotate it immediately, then remove it from reachable history following GitHub's sensitive-data removal procedure. Deleting the current file alone is insufficient; forks, caches, images, and prior commits may retain it.
 
-## Runtime access
+## Runtime access (legacy HTTP service)
 
-`BACKUPD_API_TOKEN` enables bearer-token authentication on all `/v1/` routes, including restore and deletion. It must be at least 32 characters; generate it randomly and supply it through a protected environment or secret manager. Non-loopback listeners require the token, including the Docker image's `0.0.0.0:8080` default. Local loopback development can omit the token. Health endpoints remain unauthenticated and reveal only fixed status messages.
+`BACKUPD_API_TOKEN` enables bearer-token authentication on all legacy `/v1/` routes, including restore and deletion. It must be at least 32 characters; generate it randomly and supply it through a protected environment or secret manager. Non-loopback listeners require the token. Local loopback development can omit the token. Health endpoints remain unauthenticated and reveal only fixed status messages. The new CLI image has no HTTP listener; the Cloudflare Queue consumer uses platform bindings and exposes no fetch endpoint.
 
 Use TLS at a reverse proxy for remote access: bearer tokens and restored plaintext must not travel over public unencrypted HTTP. This is single-tenant authentication, not per-backup authorization or multi-tenant isolation. Application errors are sanitized for server failures. TikTok provider response bodies and raw S3 SDK errors are not stored as job errors or echoed through HTTP.
 
 ## Review status and unresolved findings
 
-The source/configuration file scan found no detected credentials. Live provider verification and a Git history scan were not performed during this review because provider credentials and local Git metadata were unavailable. Current unit tests cover only a subset of the service; compilation and a green scan are insufficient to call this production-hardened.
+The source/configuration file scan found no detected credentials. The stateless refactor also scanned the available local Git history (one commit) without detected leaks. Live provider verification has not been performed without account credentials. Current unit tests cover only a subset of the service; compilation and a green scan are insufficient to call this production-hardened.
 
-The following findings are release blockers for reliable unattended backup storage:
+The following findings are release blockers for the retained legacy SQLite service. They are not the execution path of the new stateless engine:
 
 | Priority | Finding | Location / next work |
 |---|---|---|

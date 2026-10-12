@@ -1,0 +1,27 @@
+[package]
+name = "backupd-lib"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+default = []
+native = ["dep:tokio", "dep:tokio-util", "dep:reqwest"]
+
+[dependencies]
+async-trait.workspace = true
+blake3 = { workspace = true, features = ["pure"] }
+chacha20poly1305.workspace = true
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+futures.workspace = true
+getrandom = { version = "0.2", features = ["js"] }
+hex.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+base64.workspace = true
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { workspace = true, optional = true }
+tokio-util = { workspace = true, optional = true, features = ["compat"] }
+reqwest = { version = "0.12", optional = true, default-features = false, features = ["rustls-tls", "stream"] }

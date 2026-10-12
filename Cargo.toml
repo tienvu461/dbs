@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
-members = ["crates/backupd", "crates/core", "crates/catalog", "crates/pipeline", "crates/source", "crates/transport", "crates/worker"]
+members = ["crates/backupd", "crates/core", "crates/catalog", "crates/pipeline", "crates/source", "crates/transport", "crates/worker", "crates/engine", "crates/backupctl", "crates/cloudflare"]
+default-members = ["crates/engine", "crates/backupctl"]
 
 [workspace.package]
 edition = "2021"
